@@ -1,5 +1,6 @@
 package com.example.demo.common.interceptor;
 
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.StringUtils;
 import com.example.demo.utils.JwtUtils;
 import io.jsonwebtoken.Claims;
@@ -7,8 +8,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.concurrent.TimeUnit;
+
 
 public class LoginInterceptor implements HandlerInterceptor {
+
+    // 👇 1. 定义一个变量接收 Redis
+    private StringRedisTemplate stringRedisTemplate;
+
+    // 👇 2. 通过构造函数传进来
+    public LoginInterceptor(StringRedisTemplate stringRedisTemplate) {
+        this.stringRedisTemplate = stringRedisTemplate;
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
@@ -32,17 +43,28 @@ public class LoginInterceptor implements HandlerInterceptor {
 
         // 3. 验证 token 是否伪造或过期
         try {
-            // 解析 token，如果报错说明是假的或过期的
-            Claims claims = JwtUtils.parseToken(token);
-
-            // 可以把解析出来的用户信息存进 request，给 Controller 用 (可选)
-            request.setAttribute("currentUser", claims);
-
-            return true; // 放行，请进！
+            JwtUtils.parseToken(token);
         } catch (Exception e) {
             response.setStatus(401);
             response.getWriter().write("401 Unauthorized: Token is invalid");
             return false; // 拦截
         }
+
+        //  4. 【核心新增】去 Redis 查 Token 是否存在/过期
+        String redisKey = "login:token:" + token;
+        String userId = stringRedisTemplate.opsForValue().get(redisKey);
+
+        if (userId == null) {
+            // Redis 里没查到，说明过期了，或者用户已经登出了
+            response.setStatus(401);
+            response.getWriter().write("401 Unauthorized: Token expired");
+            return false; // 拦截！
+        }
+
+        // 5. 【可选优化】自动续期
+        // 如果用户还在操作，就给他续命 30 分钟
+        stringRedisTemplate.expire(redisKey, 30, TimeUnit.MINUTES);
+
+        return true; // 放行
     }
 }

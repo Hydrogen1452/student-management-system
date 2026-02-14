@@ -6,21 +6,25 @@ import com.example.demo.common.Result;
 import com.example.demo.service.SysUserService;
 import com.example.demo.utils.JwtUtils;
 
+import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.util.DigestUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 public class LoginController {
 
     @Autowired
     private SysUserService sysUserService;
+
+    // 👇 1. 注入 Redis 工具
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     // 登录接口
     // 接收一个 SysUser 对象 (里面包含 username 和 password)
@@ -52,9 +56,20 @@ public class LoginController {
         Map<String, Object> claims = new HashMap<>();
         claims.put("id", dbUser.getId());
         claims.put("username", dbUser.getUsername());
-
         // 2. 生成 Token
         String token = JwtUtils.generateToken(claims);
+
+        // 👇 2. 【核心新增】把 Token 存入 Redis
+        // Key: "login:token:" + token (加前缀方便管理)
+        // Value: 用户信息 JSON (或者简单存个 "1")
+        // 过期时间: 30 分钟 (TimeUnit.MINUTES)
+        // 这样 30 分钟后，Redis 会自动删掉这个 Key，用户就被迫下线了
+
+        // 注意：这里我们用 token 当 Key，方便拦截器查
+        String redisKey = "login:token:" + token;
+
+        // 存进去！(Value 存用户 ID 或者 JSON 都可以，这里存 ID)
+        stringRedisTemplate.opsForValue().set(redisKey, dbUser.getId().toString(), 30, TimeUnit.MINUTES);
 
         // 3. 把 Token 和 用户信息一起返回给前端
         // 我们在 dbUser 对象里可能没有 token 字段，
@@ -69,6 +84,15 @@ public class LoginController {
         // 把 dbUser 返回给前端
         // 前端收到的 JSON 就会是： { "id":1, "username":"admin", "token":"xxxxx" }
         return Result.success(dbUser);
+    }
+
+    // 👇 3. 【新增】退出登录接口 (登出)
+    @PostMapping("/logout")
+    public Result logout(@RequestHeader("token") String token) {
+        // 前端发请求带 token 过来，我们去 Redis 里删掉它
+        String redisKey = "login:token:" + token;
+        stringRedisTemplate.delete(redisKey);
+        return Result.success();
     }
 
     //注册接口

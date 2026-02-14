@@ -8,6 +8,14 @@ spring:
     username: root
     # 你的密码
     password: root
+    #  Redis 配置
+    data: # 注意：Spring Boot 3 是 spring.data.redis，旧版本可能是 spring.redis
+        redis:
+          host: localhost
+          port: 6379
+          database: 0     # 存到第 0 号数据库
+          password:       # 如果你没设置密码留空即可
+          timeout: 3000ms # 超时时间
 
 # MyBatis-Plus 的一个小配置，方便以后在控制台看 SQL 日志
 mybatis-plus:

@@ -59,16 +59,26 @@ import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { User, Avatar } from '@element-plus/icons-vue' // 需要安装图标库，如果没有先忽略icon
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request' // 👈 加上这行！
 
 const router = useRouter()
 const userStr = localStorage.getItem('user')
 const user = ref(userStr ? JSON.parse(userStr) : {})
 
 const logout = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
-  ElMessage.info('已退出')
-  router.push('/login')
+  // 1. 先发请求通知后端 (调用刚才写的 /logout 接口)
+  // 注意：这里不用传参数，因为 request.js 会自动把 token 放在 header 里带过去
+  request.post('/logout').then(res => {
+    // 不管后端成功失败，前端都要清空
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    ElMessage.success('安全退出')
+    router.push('/login')
+  }).catch(err => {
+    // 万一断网了，也要强制退出
+    localStorage.removeItem('token')
+    router.push('/login')
+  })
 }
 </script>
 
