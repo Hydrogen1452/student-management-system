@@ -17,6 +17,9 @@ spring:
           password:       # 如果你没设置密码留空即可
           timeout: 3000ms # 超时时间
 
+springdoc:
+  swagger-ui:
+    path: /doc.html # 访问这个路径就能看到文档
 # MyBatis-Plus 的一个小配置，方便以后在控制台看 SQL 日志
 mybatis-plus:
   configuration:

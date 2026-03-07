@@ -18,6 +18,14 @@ public class WebConfig implements WebMvcConfigurer {
         // 注册我们刚才写的安检员
         registry.addInterceptor(new LoginInterceptor(stringRedisTemplate))
                 .addPathPatterns("/**")  // 1. 拦截所有路径
-                .excludePathPatterns("/login", "/register"); // 2. 放行登录和注册 (不然连登录都登不进去了)
+                .excludePathPatterns(
+                        "/login",
+                        "/register",
+                        "/doc.html",
+                        "/webjars/**",
+                        "/swagger-ui.html", // 旧版路径
+                        "/swagger-ui/**",   // 新版 UI 资源
+                        "/v3/api-docs/**"   // API 定义 JSON
+                        ); // 2. 放行登录和注册 (不然连登录都登不进去了)
     }
 }

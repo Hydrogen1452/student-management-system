@@ -8,5 +8,5 @@ import org.springframework.stereotype.Service;
 
 
 @Service
-public class TeacherIServiceimpl extends ServiceImpl<TeacherMapper, Teacher> implements TeacherService {
+public class TeacherIServiceImpl extends ServiceImpl<TeacherMapper, Teacher> implements TeacherService {
 }

@@ -6,6 +6,8 @@ import com.example.demo.common.Result;
 import com.example.demo.service.SysUserService;
 import com.example.demo.utils.JwtUtils;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -16,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+@Tag(name = "登录页")
 @RestController
 public class LoginController {
 
@@ -28,6 +31,7 @@ public class LoginController {
 
     // 登录接口
     // 接收一个 SysUser 对象 (里面包含 username 和 password)
+    @Operation(summary = "登录")
     @PostMapping("/login")
     public Result<SysUser> login(@RequestBody SysUser user) {
         // 1. 查用户
@@ -86,6 +90,7 @@ public class LoginController {
         return Result.success(dbUser);
     }
 
+    @Operation(summary = "退出登录")
     // 👇 3. 【新增】退出登录接口 (登出)
     @PostMapping("/logout")
     public Result logout(@RequestHeader("token") String token) {
@@ -96,6 +101,7 @@ public class LoginController {
     }
 
     //注册接口
+    @Operation(summary = "注册")
     @PostMapping("/register")
     public Result<SysUser> register(@RequestBody SysUser user) {
         // 1. 校验参数是否为空 (简单校验)
@@ -134,6 +140,7 @@ public class LoginController {
      * 修改密码接口
      * 参数 Map 包含: username, oldPassword, newPassword
      */
+    @Operation(summary = "密码")
     @PutMapping("/password")
     public Result<SysUser> updatePassword(@RequestBody Map<String, String> map) {
         String username = map.get("username");
