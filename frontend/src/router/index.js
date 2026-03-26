@@ -16,7 +16,7 @@ const routes = [
     {
         path: '/',
         component: AppLayout, // 根路径显示 Layout
-        redirect: '/student', // 默认跳到学生页
+        redirect: '/Dashboard', // 默认跳到页
         children: [ // 子路由：显示在 Layout 的 <router-view> 里
             {
                 path: 'student', // 访问 /student
@@ -27,6 +27,27 @@ const routes = [
                 path: 'teacher', // 访问 /teacher
                 name: 'TeacherManage',
                 component: () => import('@/views/TeacherManage.vue')
+            },
+            // 👇 新加的必须放在这里面，跟上面兄弟对齐
+            {
+                path: 'select-course', // 子路由不用加斜杠
+                name: 'SelectCourse',
+                component: () => import('@/views/SelectCourse.vue')
+            },
+            {
+                path: 'course',
+                name: 'CourseManage',
+                component: () => import('@/views/CourseManage.vue')
+            },
+            {
+                path: 'notice',
+                name: 'noticeManage',
+                component: () => import('@/views/NoticeManage.vue')
+            },
+            {
+                path: 'dashboard',
+                name: 'Dashboard',
+                component: () => import('@/views/Dashboard.vue')
             }
         ]
     }

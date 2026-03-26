@@ -29,7 +29,7 @@ public class Result<T> {
     }
 
     // --- Getter 和 Setter (必须有！) ---
-    // 用 Alt+Insert 生成，或者直接复制下面
+    // 用 Alt+Insert 生成
     public Integer getCode() {
         return code;
     }

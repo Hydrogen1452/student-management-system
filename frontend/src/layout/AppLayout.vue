@@ -15,8 +15,17 @@
             router
             style="border: none;"
         >
+          <el-menu-item index="/dashboard">
+            <el-icon><Notebook /></el-icon>
+            <span>首页</span>
+          </el-menu-item>
+          <!-- 菜单项：选课管理 -->
+          <el-menu-item index="/notice">
+            <el-icon><Notebook /></el-icon>
+            <span>公告管理</span>
+          </el-menu-item>
           <!-- 菜单项：学生管理 -->
-          <el-menu-item index="/">
+          <el-menu-item index="/student">
             <el-icon><User /></el-icon>
             <span>学生管理</span>
           </el-menu-item>
@@ -25,6 +34,18 @@
           <el-menu-item index="/teacher">
             <el-icon><Avatar /></el-icon>
             <span>教师管理</span>
+          </el-menu-item>
+
+          <!-- 菜单项：选课中心 -->
+          <el-menu-item index="/select-course">
+            <el-icon><collection /></el-icon>
+            <span>选课中心</span>
+          </el-menu-item>
+
+          <!-- 菜单项：选课管理 -->
+          <el-menu-item index="/course">
+            <el-icon><Notebook /><collection /></el-icon>
+            <span>选课管理</span>
           </el-menu-item>
 
         </el-menu>
@@ -38,8 +59,9 @@
           </div>
           <div class="header-right">
             <!-- 昵称和退出按钮 (把 StudentManage 里的那部分搬过来) -->
-            <span>{{ user.username || user.nickname }}</span>
+            <span>你好，{{ user.username || user.nickname }}</span>
             <el-button type="text" style="color: white; margin-left: 10px;" @click="logout">退出</el-button>
+            <el-button type="text" style="color: white; margin-left: 10px;" @click="openPassDialog">修改密码</el-button>
           </div>
         </el-header>
 
@@ -51,15 +73,32 @@
       </el-container>
 
     </el-container>
+
+    <!-- 修改密码的弹窗 -->
+    <el-dialog v-model="passDialogVisible" title="修改密码" width="400px">
+      <el-form :model="passForm" label-width="100px">
+        <el-form-item label="原密码">
+          <el-input v-model="passForm.oldPassword" type="password" show-password></el-input>
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input v-model="passForm.newPassword" type="password" show-password></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="savePassword">确认修改</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, reactive  } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { User, Avatar } from '@element-plus/icons-vue' // 需要安装图标库，如果没有先忽略icon
+import { User, Avatar, Collection, Notebook} from '@element-plus/icons-vue' // 需要安装图标库，如果没有先忽略icon
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request' // 👈 加上这行！
+
 
 const router = useRouter()
 const userStr = localStorage.getItem('user')
@@ -80,6 +119,46 @@ const logout = () => {
     router.push('/login')
   })
 }
+
+// 修改密码模块
+// 2. 修改密码相关变量
+const passDialogVisible = ref(false)
+const passForm = reactive({
+  oldPassword: '',
+  newPassword: ''
+})
+
+// 打开弹窗
+const openPassDialog = () => {
+  passForm.oldPassword = ''
+  passForm.newPassword = ''
+  passDialogVisible.value = true
+}
+
+// 提交修改
+const savePassword = () => {
+  if (!passForm.oldPassword || !passForm.newPassword) {
+    ElMessage.warning("密码不能为空")
+    return
+  }
+
+  // 构造发给后端的参数
+  const data = {
+    username: user.value.username, // 从缓存里拿用户名
+    oldPassword: passForm.oldPassword,
+    newPassword: passForm.newPassword
+  }
+
+  request.put('/password', data).then(res => {
+    if (res.code === 200) {
+      ElMessage.success("修改成功，请重新登录")
+      logout() // 修改成功后，强制退出，让用户重新登录
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
 </script>
 
 <style scoped>

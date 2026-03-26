@@ -3,6 +3,7 @@ package com.example.demo.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.TableField;
 
 @TableName("course")
 public class Course {
@@ -13,6 +14,9 @@ public class Course {
         private Integer teacherId;
         private Integer maxCount;
         private Integer currentCount;
+
+        @TableField(exist = false) // 告诉 MyBatis：数据库没这列，别找了
+        private String teacherName;
 
         public Integer getId() {
                 return id;
@@ -60,5 +64,13 @@ public class Course {
 
         public void setCurrentCount(Integer currentCount) {
                 this.currentCount = currentCount;
+        }
+
+        public String getTeacherName() {
+                return teacherName;
+        }
+
+        public void setTeacherName(String teacherName) {
+                this.teacherName = teacherName;
         }
 }

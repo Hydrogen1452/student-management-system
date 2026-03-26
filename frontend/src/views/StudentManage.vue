@@ -67,22 +67,6 @@
         </div>
       </template>
     </el-dialog>
-
-    <!-- 修改密码的弹窗 -->
-    <el-dialog v-model="passDialogVisible" title="修改密码" width="400px">
-      <el-form :model="passForm" label-width="100px">
-        <el-form-item label="原密码">
-          <el-input v-model="passForm.oldPassword" type="password" show-password></el-input>
-        </el-form-item>
-        <el-form-item label="新密码">
-          <el-input v-model="passForm.newPassword" type="password" show-password></el-input>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="passDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="savePassword">确认修改</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -120,49 +104,10 @@ const onLoginSuccess = () => {
   loadData()
 }
 
-// 修改密码模块
-// 1. 获取当前用户信息
+// 获取当前用户信息
 const userStr = localStorage.getItem('user')
 // 防止没登录或者数据坏了报错，加个默认值
 const user = ref(userStr ? JSON.parse(userStr) : {})
-
-// 2. 修改密码相关变量
-const passDialogVisible = ref(false)
-const passForm = reactive({
-  oldPassword: '',
-  newPassword: ''
-})
-
-// 打开弹窗
-const openPassDialog = () => {
-  passForm.oldPassword = ''
-  passForm.newPassword = ''
-  passDialogVisible.value = true
-}
-
-// 提交修改
-const savePassword = () => {
-  if (!passForm.oldPassword || !passForm.newPassword) {
-    ElMessage.warning("密码不能为空")
-    return
-  }
-
-  // 构造发给后端的参数
-  const data = {
-    username: user.value.username, // 从缓存里拿用户名
-    oldPassword: passForm.oldPassword,
-    newPassword: passForm.newPassword
-  }
-
-  request.put('/password', data).then(res => {
-    if (res.code === 200) {
-      ElMessage.success("修改成功，请重新登录")
-      logout() // 修改成功后，强制退出，让用户重新登录
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
 
 
 //列表展示模块
@@ -233,7 +178,7 @@ const form = reactive({
 
 // 定义添加函数
 const handleSave = () => { // 建议把 handleAdd 改名为 handleSave
-  if (!form.name || !form.age) {
+  if (!form.name || !form.age|| !form.gender) {
     ElMessage.error('请输入姓名和年龄')
     return
   }

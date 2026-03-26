@@ -1,15 +1,15 @@
 <template>
   <div style="margin: 50px auto; width: 800px;">
-    <h1>教师列表</h1>
+    <h1>课程列表</h1>
 
     <el-button type="primary" @click="loadData">刷新数据</el-button>
-    <el-button type="primary" plain @click="openAddDialog">添加教师</el-button>
+    <el-button type="primary" plain @click="openAddDialog">添加课程</el-button>
 
     <br><br>
 
     <!-- el-table: 专门展示数据的表格 -->
     <!-- :data="students" 意思是：把 students 数组给表格，它自动遍历 -->
-    <el-table :data="teachers" border style="width: 100%">
+    <el-table :data="courses" border style="width: 100%">
 
       <!-- prop="id": 对应 Student 对象的 id 属性 -->
       <el-table-column prop="id" label="ID" sortable width="80" />
@@ -17,8 +17,13 @@
       <!-- prop="name": 对应 Student 对象的 name 属性 -->
       <el-table-column prop="name" label="姓名" width="180" />
 
+      <!-- prop="name": 对应 Student 对象的 name 属性 -->
+      <el-table-column prop="score" label="学分" />
       <!-- prop="age": 对应 Student 对象的 age 属性 -->
-      <el-table-column prop="subject" label="科目" />
+      <el-table-column prop="teacherName" label="授课教师" />
+
+      <!-- prop="age": 对应 Student 对象的 age 属性 -->
+      <el-table-column prop="maxCount" label="人数" />
 
       <!-- 操作列 -->
       <el-table-column label="操作" width="180">
@@ -42,11 +47,26 @@
     <!-- :title 绑定一个变量 -->
     <el-dialog v-model="dialogFormVisible" :title="dialogTitle" width="500">
       <el-form :model="form" rules="rules">
-        <el-form-item label="教师姓名" :label-width="formLabelWidth">
+        <el-form-item label="课程名称" :label-width="formLabelWidth">
           <el-input v-model="form.name" autocomplete="off" />
         </el-form-item>
-        <el-form-item label="所教科目" :label-width="formLabelWidth">
-          <el-input v-model="form.subject" autocomplete="off" />
+        <el-form-item label="授课老师" :label-width="formLabelWidth">
+          <!-- 绑定 form.teacherId -->
+          <el-select v-model="form.teacherId" placeholder="请选择老师">
+            <!-- 循环显示老师名字，但背后存的是 ID -->
+            <el-option
+                v-for="item in teachers"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="学分" :label-width="formLabelWidth">
+          <el-input v-model="form.score" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="人数" :label-width="formLabelWidth">
+          <el-input v-model.number="form.maxCount" type="maxCount"autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -96,28 +116,38 @@ const onLoginSuccess = () => {
 }
 
 
+
 // 获取当前用户信息
 const userStr = localStorage.getItem('user')
 // 防止没登录或者数据坏了报错，加个默认值
 const user = ref(userStr ? JSON.parse(userStr) : {})
 
 
-//列表展示模块
-// 定义一个响应式变量，用来存学生数据
-// 初始值是个空数组
 const teachers = ref([])
+
+// 加载所有老师（复用你之前的接口）
+const loadTeachers = () => {
+  request.get('/teacher/list').then(res => {
+    teachers.value = res.data
+  })
+}
+
+//列表展示模块
+// 定义一个响应式变量，用来存数据
+// 初始值是个空数组
+const courses = ref([])
 
 // 定义请求数据的函数
 const loadData = () => {
   // 发送 GET 请求给 Java
-  request.get('/teacher/list')
+  request.get('/course/list')
       .then(res => {
         // res.data 是 Axios 包的一层壳
         // res.data.data 才是我们后端 Result 里写的 data (那个 List)
         console.log("Java 返回的数据：", res.data)
 
-        // 把拿到的数据赋值给 students，页面会自动刷新
-        teachers.value = res.data
+        // 把拿到的数据赋值给 courses，页面会自动刷新
+        courses.value = res.data
       })
       .catch(err => {
         alert("请求失败，请检查后端是否启动！")
@@ -140,7 +170,7 @@ const handleDelete = (id) => {
   )
       .then(() => {
         // 2. 如果用户点了“确定”，才发请求给 Java
-        request.delete(`/teacher/${id}`)
+        request.delete(`/course/${id}`)
             .then(res => {
               if (res.code === 200) {
                 // 3. 成功后，提示一下
@@ -158,19 +188,21 @@ const handleDelete = (id) => {
 }
 
 // 保存模块
-const dialogTitle = ref('添加教师') // 默认标题
+const dialogTitle = ref('添加课程') // 默认标题
 const dialogFormVisible = ref(false)
 const formLabelWidth = '140px'
 const form = reactive({
-  id: null, // 新增了 id 字段
-  name: '',
-  subject: ''
+  id: null,
+  name: '',       // 课程名
+  score: '',      // 学分
+  maxCount: '',   // 👈 注意：C 要大写！跟后端对应
+  teacherId: ''   // 👈 重点！我们要存老师的 ID，而不是名字
 })
 
 // 定义添加函数
 const handleSave = () => { // 建议把 handleAdd 改名为 handleSave
-  if (!form.name || !form.subject) {
-    ElMessage.error('请输入姓名和所教学科目')
+  if (!form.name || !form.score || !form.maxCount || !form.teacherId) {
+    ElMessage.error('请将表单填写完整')
     return
   }
 
@@ -181,11 +213,11 @@ const handleSave = () => { // 建议把 handleAdd 改名为 handleSave
     // 但为了省事，如果你后端还没写 update 接口，这里先演示逻辑
     // 假设你后端有一个 saveOrUpdate 或者你复用 add 接口(如果后端支持)
     // *正规做法：发 PUT 请求*
-    request.put('/teacher/update', form)
+    request.put('/course/update', form)
         .then(handleResponse) // 封装一下回调
   } else {
     // B. 无 ID -> 新增 (POST)
-    request.post('/teacher/add', form)
+    request.post('/course/add', form)
         .then(handleResponse)
   }
 }
@@ -210,7 +242,9 @@ const handleEdit = (row) => {
   // 注意：一定要有 id，这样后端才知道是修改谁
   form.id = row.id
   form.name = row.name
-  form.subject = row.subject
+  form.score = row.score
+  form.maxCount = row.maxCount
+  form.teacherId = row.teacherId
 
   // 3. 打开弹窗
   dialogFormVisible.value = true
@@ -218,17 +252,24 @@ const handleEdit = (row) => {
 
 const openAddDialog = () => {
   // 1. 改标题
-  dialogTitle.value = '添加教师'
+  dialogTitle.value = '添加课程'
 
   // 2. 清空表单 (重要！)
   form.id = null
   form.name = ''
-  form.subject = ''
+  form.score = null
+  form.maxcount = null
+  form.teacherId = null
 
   // 3. 打开弹窗
   dialogFormVisible.value = true
 }
 
+// 别忘了在 onMounted 里调用它
+onMounted(() => {
+  loadData()     // 查课程
+  loadTeachers() // 查老师 (为了给下拉框用)
+})
 </script>
 
 <style scoped>

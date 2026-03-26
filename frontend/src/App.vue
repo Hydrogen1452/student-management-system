@@ -16,7 +16,6 @@
 }
 </style>
 
-<!-- 3. style: 这里写 CSS 样式  -->
 <style scoped>
 .main {
   text-align: center;
